@@ -14,7 +14,9 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.compose.rememberNavController
 import com.aitool.plantid.components.AppNavigation
 import com.aitool.plantid.ui.PlantIDTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

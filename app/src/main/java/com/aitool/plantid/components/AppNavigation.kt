@@ -1,12 +1,18 @@
 package com.aitool.plantid.components
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
+import com.aitool.plantid.view.ChatDetailScreen
+import com.aitool.plantid.view.ChatHistoryScreen
 import com.aitool.plantid.view.LanguageScreen
+import com.aitool.plantid.view.NewChatScreen
 import com.aitool.plantid.view.PlantBotScreen
 import com.aitool.plantid.view.SettingScreen
 
@@ -14,60 +20,62 @@ import com.aitool.plantid.view.SettingScreen
 fun AppNavigation(rootNavController: NavHostController) {
     NavHost(
         navController = rootNavController,
-        startDestination = "dashboard",
-
-        // 1. Hiệu ứng khi MỞ trang mới (Trang mới trượt từ PHẢI sang TRÁI)
-        enterTransition = {
-            slideIntoContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                animationSpec = tween(300) // 300ms là tốc độ chuẩn cực kỳ mượt mà
-            )
-        },
-
-        // 2. Hiệu ứng của trang cũ khi bị trang mới đè lên (Cũng trượt dạt sang TRÁI)
-        exitTransition = {
-            slideOutOfContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                animationSpec = tween(300)
-            )
-        },
-
-        // 3. Hiệu ứng khi QUAY LẠI trang cũ bằng nút Back (Trang cũ trượt từ TRÁI sang PHẢI)
-        popEnterTransition = {
-            slideIntoContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                animationSpec = tween(300)
-            )
-        },
-
-        // 4. Hiệu ứng của trang hiện tại khi bị đóng đi (Trang hiện tại trượt sang PHẢI biến mất)
-        popExitTransition = {
-            slideOutOfContainer(
-                towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                animationSpec = tween(300)
-            )
-        }
+        startDestination = "dashboard", // 🔥 Bắt đầu bằng chuỗi thuần túy như cũ
+        enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) },
+        exitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, tween(300)) },
+        popEnterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) },
+        popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, tween(300)) }
     ) {
         composable("dashboard") {
-            MainDashboardScreen(rootNavController, onNavigateToSetting = { rootNavController.navigate("setting") }, onNavigateToChatbot = { rootNavController.navigate("chatbot") })
+            MainDashboardScreen(
+                rootNavController,
+                onNavigateToSetting = { rootNavController.navigate("setting") },
+                // Khi bấm nút mở Chatbot, đi đến trang NewChat
+                onNavigateToChatbot = { rootNavController.navigate("chatbot") }
+            )
         }
 
         composable("setting") {
-            SettingScreen(
-                onBack = { rootNavController.popBackStack() }, onNavigateToLanguage = { rootNavController.navigate("language") }
-            )
+            SettingScreen(onBack = { rootNavController.popBackStack() }, onNavigateToLanguage = { rootNavController.navigate("language") })
         }
 
         composable("language") {
-            LanguageScreen(
-                onConfirmClick = { selectedLanguage ->
-                    rootNavController.popBackStack()
-                }
-            )
+            LanguageScreen(onConfirmClick = { rootNavController.popBackStack() })
+        }
+
+        // 1. Màn hình Cò mồi
+        composable("new_chat") {
+            NewChatScreen(navController = rootNavController)
+        }
+
+        // 2. Màn hình Lịch sử
+        composable("chat_history") {
+            ChatHistoryScreen(navController = rootNavController)
         }
 
         composable("chatbot") {
-            PlantBotScreen { rootNavController.popBackStack() }
+            PlantBotScreen(
+                navController = rootNavController, // Truyền vào đây
+                onBackClick = { rootNavController.popBackStack() }
+            )
+        }
+
+        // 3. Màn hình Chat Chi tiết (Có gắn biến trên link)
+        composable(
+            route = "chat_detail?chatId={chatId}&initialMsg={initialMsg}",
+            arguments = listOf(
+                navArgument("chatId") { type = NavType.StringType; defaultValue = "-1" },
+                navArgument("initialMsg") { type = NavType.StringType; nullable = true }
+            )
+        ) { backStackEntry ->
+            val chatId = backStackEntry.arguments?.getString("chatId") ?: "-1"
+            val initialMsg = backStackEntry.arguments?.getString("initialMsg")
+
+            ChatDetailScreen(
+                navController = rootNavController,
+                chatId = chatId,
+                initialMsg = initialMsg
+            )
         }
     }
 }

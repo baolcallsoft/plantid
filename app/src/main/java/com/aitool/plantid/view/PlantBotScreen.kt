@@ -30,10 +30,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlantBotScreen(onBackClick: () -> Unit) {
+fun PlantBotScreen(navController: NavController, onBackClick: () -> Unit) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val tabs = listOf("New chat", "Chat history")
 
@@ -106,16 +107,13 @@ fun PlantBotScreen(onBackClick: () -> Unit) {
                 }
             }
 
-            // ==========================================
-            // 2. KHU VỰC THAY RUỘT (Các màn hình con)
-            // ==========================================
             Box(modifier = Modifier.fillMaxSize()) {
                 when (selectedTabIndex) {
                     0 -> {
-                        NewChatScreen()
+                        NewChatScreen(navController = navController)
                     }
                     1 -> {
-                        ChatHistoryScreen()
+                        ChatHistoryScreen(navController = navController)
                     }
                 }
             }
