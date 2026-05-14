@@ -5,22 +5,20 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonDefaults.shape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -30,8 +28,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.aitool.plantid.R
-import com.aitool.plantid.ui.Neutral100
-import com.aitool.plantid.ui.Neutral400
+import com.aitool.plantid.ui.* // Đảm bảo import Green400, Green900, v.v.
 import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
 
@@ -40,6 +37,7 @@ import kotlin.math.absoluteValue
 fun PlantBannerSlider() {
     val pagerState = rememberPagerState(pageCount = { 2 })
 
+    // Tự động chạy slider
     LaunchedEffect(Unit) {
         while (true) {
             delay(4000)
@@ -54,17 +52,14 @@ fun PlantBannerSlider() {
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // KHUNG CHÍNH BAO GỒM ẢNH (TRƯỢT) VÀ CHỮ (ĐỨNG IM)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
+                .height(185.dp) // Tăng nhẹ chiều cao tổng thể để thoáng hơn
                 .padding(horizontal = 16.dp)
-                .clip(RoundedCornerShape(20.dp)) // Bo góc toàn bộ khung
+                .clip(RoundedCornerShape(24.dp))
         ) {
-            // ==========================================
-            // LAYER 1: LỚP ẢNH NỀN (CHỈ TRƯỢT NGANG)
-            // ==========================================
+            // LAYER 1: ẢNH NỀN
             HorizontalPager(
                 state = pagerState,
                 beyondViewportPageCount = 1,
@@ -74,27 +69,23 @@ fun PlantBannerSlider() {
                     painter = painterResource(
                         id = if (page == 0) R.drawable.slide1 else R.drawable.slide2
                     ),
-                    contentDescription = "Banner Background",
+                    contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
             }
 
-            // ==========================================
-            // LAYER 2: LỚP CHỮ & NÚT (ĐỨNG CỐ ĐỊNH + MỜ DẦN)
-            // ==========================================
-
-            // 1. Tính toán phần trăm trượt để ra độ mờ cho từng slide
+            // LAYER 2: CHỮ & NÚT
             val offset0 = (pagerState.currentPage - 0) + pagerState.currentPageOffsetFraction
             val alpha0 = 1f - offset0.absoluteValue.coerceIn(0f, 1f)
 
             val offset1 = (pagerState.currentPage - 1) + pagerState.currentPageOffsetFraction
             val alpha1 = 1f - offset1.absoluteValue.coerceIn(0f, 1f)
 
-            Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            Box(modifier = Modifier.fillMaxSize().padding(20.dp)) {
 
-                // --- CHỮ CỦA SLIDE 1 ---
-                if (alpha0 > 0f) {
+                // --- SLIDE 1: SNAP IT NOW ---
+                if (alpha0 > 0.01f) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth(0.6f)
@@ -105,31 +96,46 @@ fun PlantBannerSlider() {
                         Text(
                             text = "Don't know\nthis plant?",
                             color = Color.White,
-                            fontSize = 22.sp,
+                            fontSize = 20.sp, // 👉 Đúng 20sp
                             fontWeight = FontWeight.Bold,
-
+                            lineHeight = 26.sp
                         )
-                        Spacer(modifier = Modifier.height(5.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Take a photo to instantly recognize any plant",
-                            color = Color.White.copy(alpha = 0.8f),
-                            fontSize = 12.sp,
-                            lineHeight = 18.sp
+                            text = "Take a photo to instantly\nrecognize any plant",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 10.sp, // 👉 Đúng 10sp
+                            lineHeight = 15.sp
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Button(
-                            onClick = { /* Action Snap */ },
-                            modifier = Modifier.height(31.dp),
-                            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(24.dp)
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // NÚT GRADIENT (BRUSH)
+                        Box(
+                            modifier = Modifier
+                                .height(40.dp)
+                                .wrapContentWidth()
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(
+                                    brush = Brush.horizontalGradient(
+                                        colors = listOf(Green400, Green900)
+                                    )
+                                )
+                                .clickable { /* Action */ }
+                                .padding(horizontal = 20.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text("Snap it now!", color = Color.White)
+                            Text(
+                                text = "Snap it now!",
+                                color = Color.White,
+                                fontSize = 12.sp, // 👉 Đúng 12sp
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
 
-                // --- CHỮ CỦA SLIDE 2 ---
-                if (alpha1 > 0f) {
+                // --- SLIDE 2: DIAGNOSE ---
+                if (alpha1 > 0.01f) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth(0.65f)
@@ -139,35 +145,43 @@ fun PlantBannerSlider() {
                     ) {
                         Text(
                             text = "Diagnose plant\nproblems",
-                            color = Neutral100,
-                            fontSize = 20.sp,
+                            color = TextBrownLarge,
+                            fontSize = 20.sp, // 👉 Đúng 20sp
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.End,
+                            lineHeight = 26.sp
                         )
-                        Spacer(modifier = Modifier.height(5.dp))
+                        Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Scan damaged leaves to identify issues and find solutions",
-                            color = Color(0xFF6B4226),
-                            fontSize = 10.sp,
+                            text = "Scan damaged leaves to identify\nissues and find solutions",
+                            color = TextBrownSmall,
+                            fontSize = 10.sp, // 👉 Đúng 10sp
                             textAlign = TextAlign.End,
-                            lineHeight = 14.sp
+                            lineHeight = 15.sp
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+
                         Button(
-                            onClick = { /* Action Scan */ },
-                            modifier = Modifier.height(31.dp),
+                            onClick = { /* Action */ },
+                            modifier = Modifier.height(40.dp), // 👉 Chiều cao đồng bộ
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB50000)),
-                            shape = RoundedCornerShape(24.dp)
+                            shape = RoundedCornerShape(20.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp)
                         ) {
-                            Text(text = "Scan my plant", color = Color.White)
+                            Text(
+                                text = "Scan my plant",
+                                color = Color.White,
+                                fontSize = 12.sp, // 👉 Đúng 12sp
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
             }
         }
 
-        // --- CHẤM ĐIỀU HƯỚNG ---
-        Spacer(modifier = Modifier.height(8.dp))
+        // ĐIỂM INDICATOR
+        Spacer(modifier = Modifier.height(10.dp))
         Row(
             modifier = Modifier.wrapContentWidth(),
             horizontalArrangement = Arrangement.Center,
@@ -175,20 +189,17 @@ fun PlantBannerSlider() {
         ) {
             repeat(2) { iteration ->
                 val isSelected = pagerState.currentPage == iteration
-                val color = if (isSelected) MaterialTheme.colorScheme.primary else Neutral100
-
                 val width by animateDpAsState(
-                    targetValue = if (isSelected) 24.dp else 8.dp,
-                    animationSpec = tween(durationMillis = 300),
-                    label = "dot_width"
+                    targetValue = if (isSelected) 20.dp else 7.dp,
+                    animationSpec = tween(300),
+                    label = ""
                 )
-
                 Box(
                     modifier = Modifier
-                        .padding(horizontal = 4.dp)
+                        .padding(horizontal = 3.dp)
                         .clip(CircleShape)
-                        .background(color)
-                        .height(8.dp)
+                        .background(if (isSelected) Green900 else Neutral100)
+                        .height(7.dp)
                         .width(width)
                 )
             }

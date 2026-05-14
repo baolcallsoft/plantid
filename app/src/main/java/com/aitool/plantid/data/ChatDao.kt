@@ -20,6 +20,10 @@ interface ChatDao {
     @Query("DELETE FROM chat_sessions WHERE sessionId = :id")
     suspend fun deleteSession(id: Int)
 
+    // Bổ sung lệnh này vào ChatDao.kt
+    @Query("UPDATE chat_sessions SET title = :newTitle WHERE sessionId = :id")
+    suspend fun updateSessionTitle(id: Int, newTitle: String)
+
     // --- Lệnh cho tin nhắn ---
 
     // 4. Lấy toàn bộ tin nhắn của một đoạn chat cụ thể

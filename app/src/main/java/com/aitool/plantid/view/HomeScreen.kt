@@ -1,5 +1,8 @@
 package com.aitool.plantid.view
 
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,16 +23,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.aitool.plantid.R
+import com.aitool.plantid.camera.CameraPermissionSheet
 import com.aitool.plantid.components.PlantBannerSlider
 import com.aitool.plantid.ui.Diagnose
 import com.aitool.plantid.ui.Flower
@@ -46,7 +56,37 @@ data class FeatureItem(
 )
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(onFeatureClick: (CameraEntryMode) -> Unit) {
+    val context = LocalContext.current
+
+    // 1. Quản lý trạng thái đóng/mở Sheet và chế độ chờ chuyển trang
+    var showPermissionSheet by remember { mutableStateOf(false) }
+    var pendingMode by remember { mutableStateOf<CameraEntryMode?>(null) }
+
+    // 2. Launcher để gọi hệ thống xin quyền của Android
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Nếu người dùng đồng ý từ System Dialog, chuyển hướng tới chế độ đang chờ
+            pendingMode?.let { onFeatureClick(it) }
+        }
+        showPermissionSheet = false
+    }
+
+    // Hàm kiểm tra quyền và thực hiện hành động
+    val handleFeatureClick: (CameraEntryMode) -> Unit = { mode ->
+        val permission = android.Manifest.permission.CAMERA
+        val isGranted = ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+
+        if (isGranted) {
+            onFeatureClick(mode) // Có quyền rồi -> Vào thẳng camera
+        } else {
+            pendingMode = mode // Lưu lại chế độ muốn vào
+            showPermissionSheet = true // Hiện BottomSheet của mình
+        }
+    }
+
     val featureList = listOf(
         FeatureItem("Identify plant", "Know plant name immediately", R.drawable.ic_brandtree, MaterialTheme.colorScheme.primary),
         FeatureItem("Diagnose", "Check your plant's health", R.drawable.ic_diagnose, Diagnose),
@@ -54,33 +94,49 @@ fun HomeScreen() {
         FeatureItem("Flower", "Discover flower name", R.drawable.ic_flower, Flower)
     )
 
-    Column(modifier = Modifier
-        .background(MaterialTheme.colorScheme.background)
-        .fillMaxSize()
-    ) {
-        PlantBannerSlider()
-
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .fillMaxSize()
         ) {
-            items(featureList) { feature ->
-                FeatureCard(
-                    title = feature.title,
-                    description = feature.description,
-                    iconRes = feature.iconRes,
-                    tintColor = feature.color,
-                    onClick = {
-                        if (feature.title == "Identify plant") {
+            PlantBannerSlider()
 
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(featureList) { feature ->
+                    FeatureCard(
+                        title = feature.title,
+                        description = feature.description,
+                        iconRes = feature.iconRes,
+                        tintColor = feature.color,
+                        onClick = {
+                            // CẬP NHẬT: Gọi qua hàm xử lý quyền
+                            when (feature.title) {
+                                "Identify plant" -> handleFeatureClick(CameraEntryMode.IDENTIFY_PLANT)
+                                "Diagnose" -> handleFeatureClick(CameraEntryMode.DIAGNOSE_PLANT)
+                                "Mushroom" -> handleFeatureClick(CameraEntryMode.MUSHROOM)
+                                "Flower" -> handleFeatureClick(CameraEntryMode.FLOWER)
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
+
+        // 3. HIỂN THỊ BOTTOM SHEET XIN QUYỀN
+        CameraPermissionSheet(
+            showSheet = showPermissionSheet,
+            onDismiss = { showPermissionSheet = false },
+            onAllow = {
+                showPermissionSheet = false
+                cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+            }
+        )
     }
 }
 
@@ -135,10 +191,4 @@ fun FeatureCard(
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    HomeScreen()
 }

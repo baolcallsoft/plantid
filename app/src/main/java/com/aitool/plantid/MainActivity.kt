@@ -5,14 +5,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat.enableEdgeToEdge
-import androidx.core.view.WindowInsetsCompat
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.rememberNavController
 import com.aitool.plantid.components.AppNavigation
+import com.aitool.plantid.components.TopNoInternetBanner
+import com.aitool.plantid.components.rememberNetworkState
 import com.aitool.plantid.ui.PlantIDTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -33,8 +38,24 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PlantIDTheme {
+                val context = LocalContext.current
+                val isOnline by rememberNetworkState(context)
+
                 val rootNavController = rememberNavController()
-                AppNavigation(rootNavController = rootNavController)
+
+                Box(modifier = Modifier.fillMaxSize()) {
+
+
+                    AppNavigation(rootNavController = rootNavController)
+
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .systemBarsPadding()
+                    ) {
+                        TopNoInternetBanner(isOffline = !isOnline)
+                    }
+                }
             }
         }
     }
